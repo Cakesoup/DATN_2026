@@ -1,39 +1,87 @@
 const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
+const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
 
 const getMyInvoices = async (req, res) => {
     try {
         const userId = BigInt(req.user.userId);
+        const { page, limit, skip } = getPaginationParams(req.query);
+        const { payment_status, keyword } = req.query;
 
-        const invoices = await prisma.invoices.findMany({
-            where: {
-                bookings: {
-                    user_id: userId
-                }
-            },
-            include: {
-                bookings: {
-                    include: {
-                        vehicles: true
+        const where = {
+            bookings: {
+                user_id: userId
+            }
+        };
+
+        if (payment_status) {
+            where.payment_status = payment_status;
+        }
+
+        if (keyword) {
+            where.OR = [
+                {
+                    invoice_code: {
+                        contains: keyword,
+                        mode: 'insensitive'
                     }
                 },
-                staff_user: {
-                    select: {
-                        id: true,
-                        full_name: true,
-                        email: true
+                {
+                    bookings: {
+                        booking_code: {
+                            contains: keyword,
+                            mode: 'insensitive'
+                        }
+                    }
+                },
+                {
+                    bookings: {
+                        vehicles: {
+                            name: {
+                                contains: keyword,
+                                mode: 'insensitive'
+                            }
+                        }
                     }
                 }
-            },
-            orderBy: {
-                issued_at: 'desc'
-            }
-        });
+            ];
+        }
+
+        const [total, invoices] = await Promise.all([
+            prisma.invoices.count({ where }),
+            prisma.invoices.findMany({
+                where,
+                include: {
+                    bookings: {
+                        include: {
+                            vehicles: {
+                                include: {
+                                    pricing_plans: true
+                                }
+                            }
+                        }
+                    },
+                    staff_user: {
+                        select: {
+                            id: true,
+                            full_name: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: {
+                    issued_at: 'desc'
+                },
+                skip,
+                take: limit
+            })
+        ]);
 
         return res.status(200).json({
             success: true,
             message: 'Lấy danh sách hóa đơn thành công',
-            data: serializeBigInt(invoices)
+            data: serializeBigInt(invoices),
+            pagination: buildPagination(page, limit, total)
         });
     } catch (error) {
         console.error('Get my invoices error:', error);
@@ -55,7 +103,11 @@ const getMyInvoiceById = async (req, res) => {
             include: {
                 bookings: {
                     include: {
-                        vehicles: true
+                        vehicles: {
+                            include: {
+                                pricing_plans: true
+                            }
+                        }
                     }
                 },
                 staff_user: {

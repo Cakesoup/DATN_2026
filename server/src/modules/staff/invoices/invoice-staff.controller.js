@@ -1,7 +1,85 @@
 const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
+const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
 
-const buildInvoiceCode = () => `INV${Date.now()}${Math.floor(Math.random() * 1000)}`;
+const buildInvoiceCode = () => `INV${Date.now()}${Math.floor(Math.random() * 100000)}`;
+
+const getAllInvoicesForStaff = async (req, res) => {
+    try {
+        const { page, limit, skip } = getPaginationParams(req.query);
+        const { payment_status, keyword } = req.query;
+
+        const where = {};
+
+        if (payment_status) {
+            where.payment_status = payment_status;
+        }
+
+        if (keyword) {
+            where.OR = [
+                { invoice_code: { contains: keyword, mode: 'insensitive' } },
+                {
+                    bookings: {
+                        booking_code: { contains: keyword, mode: 'insensitive' }
+                    }
+                },
+                {
+                    bookings: {
+                        users: {
+                            full_name: { contains: keyword, mode: 'insensitive' }
+                        }
+                    }
+                }
+            ];
+        }
+
+        const [total, invoices] = await Promise.all([
+            prisma.invoices.count({ where }),
+            prisma.invoices.findMany({
+                where,
+                include: {
+                    bookings: {
+                        include: {
+                            users: {
+                                select: {
+                                    id: true,
+                                    full_name: true,
+                                    email: true,
+                                    phone: true
+                                }
+                            },
+                            vehicles: true
+                        }
+                    },
+                    staff_user: {
+                        select: {
+                            id: true,
+                            full_name: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: { issued_at: 'desc' },
+                skip,
+                take: limit
+            })
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Lấy danh sách hóa đơn thành công',
+            data: serializeBigInt(invoices),
+            pagination: buildPagination(page, limit, total)
+        });
+    } catch (error) {
+        console.error('Get all invoices for staff error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi server',
+            error: error.message
+        });
+    }
+};
 
 const createInvoice = async (req, res) => {
     try {
@@ -51,9 +129,10 @@ const createInvoice = async (req, res) => {
         }
 
         const subtotal = Number(booking.total_amount || 0);
-        const extraFee = Number(extra_fee || 0);
-        const penaltyFee = Number(penalty_fee || 0);
+        const lateFee = Number(booking.late_fee || 0);       // tự động từ biên bản trả xe
+        const penaltyFee = Number(penalty_fee || 0);          // nhân viên nhập (phạt hỏng hóc)
         const discount = Number(discount_amount || 0);
+        const extraFee = lateFee;                             // phụ phí = phí trả muộn
         const finalAmount = Math.max(subtotal + extraFee + penaltyFee - discount, 0);
 
         const invoice = await prisma.$transaction(async (tx) => {
@@ -96,7 +175,7 @@ const createInvoice = async (req, res) => {
 
             await tx.bookings.update({
                 where: { id: BigInt(booking_id) },
-                data: { booking_status: 'completed' }
+                data: { booking_status: 'invoiced' }
             });
 
             return nextInvoice;
@@ -170,6 +249,7 @@ const getInvoiceByIdForStaff = async (req, res) => {
 };
 
 module.exports = {
+    getAllInvoicesForStaff,
     createInvoice,
     getInvoiceByIdForStaff
 };

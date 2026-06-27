@@ -1,46 +1,88 @@
 const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
+const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
+
+const ACTIVE_BOOKING_STATUSES = ['pending', 'confirmed', 'handover_pending', 'in_progress'];
 
 const getPendingHandoverBookings = async (req, res) => {
     try {
-        const bookings = await prisma.bookings.findMany({
-            where: {
-                booking_status: {
+        const { page, limit, skip } = getPaginationParams(req.query);
+        const { booking_status, keyword } = req.query;
+
+        const where = {
+            booking_status: booking_status
+                ? booking_status
+                : {
                     in: ['confirmed', 'handover_pending']
                 }
-            },
-            include: {
-                users: {
-                    select: {
-                        id: true,
-                        full_name: true,
-                        email: true,
-                        phone: true
+        };
+
+        if (keyword) {
+            where.OR = [
+                { booking_code: { contains: keyword, mode: 'insensitive' } },
+                {
+                    users: {
+                        full_name: { contains: keyword, mode: 'insensitive' }
                     }
                 },
-                vehicles: {
-                    include: {
-                        pricing_plans: true
+                {
+                    vehicles: {
+                        name: { contains: keyword, mode: 'insensitive' }
+                    }
+                },
+                {
+                    vehicles: {
+                        vehicle_code: { contains: keyword, mode: 'insensitive' }
                     }
                 }
-            },
-            orderBy: { created_at: 'desc' }
-        });
+            ];
+        }
+
+        const [total, bookings] = await Promise.all([
+            prisma.bookings.count({ where }),
+            prisma.bookings.findMany({
+                where,
+                include: {
+                    users: {
+                        select: {
+                            id: true,
+                            full_name: true,
+                            email: true,
+                            phone: true
+                        }
+                    },
+                    vehicles: {
+                        include: {
+                            pricing_plans: true
+                        }
+                    }
+                },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit
+            })
+        ]);
 
         return res.status(200).json({
             success: true,
             message: 'Lấy danh sách booking chờ bàn giao thành công',
-            data: serializeBigInt(bookings)
+            data: serializeBigInt(bookings),
+            pagination: buildPagination(page, limit, total)
         });
     } catch (error) {
         console.error('Get pending handover bookings error:', error);
-        return res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi server',
+            error: error.message
+        });
     }
 };
 
 const confirmHandover = async (req, res) => {
     try {
         const bookingId = BigInt(req.params.id);
+        const { handover_battery, handover_odo, handover_note } = req.body;
 
         const booking = await prisma.bookings.findUnique({
             where: { id: bookingId }
@@ -60,7 +102,13 @@ const confirmHandover = async (req, res) => {
         const updatedBooking = await prisma.$transaction(async (tx) => {
             const nextBooking = await tx.bookings.update({
                 where: { id: bookingId },
-                data: { booking_status: 'in_progress' }
+                data: {
+                    booking_status: 'in_progress',
+                    handover_battery: handover_battery !== undefined ? Number(handover_battery) : null,
+                    handover_odo: handover_odo !== undefined ? Number(handover_odo) : null,
+                    handover_note: handover_note ?? null,
+                    handover_at: new Date()
+                }
             });
 
             await tx.vehicles.update({
@@ -85,10 +133,18 @@ const confirmHandover = async (req, res) => {
 const confirmReturn = async (req, res) => {
     try {
         const bookingId = BigInt(req.params.id);
-        const { vehicle_status_after_return, note } = req.body;
+        const {
+            vehicle_status_after_return,
+            return_battery,
+            return_odo,
+            has_damage,
+            damage_note,
+            note
+        } = req.body;
 
         const booking = await prisma.bookings.findUnique({
-            where: { id: bookingId }
+            where: { id: bookingId },
+            include: { vehicles: { include: { pricing_plans: true } } }
         });
 
         if (!booking) {
@@ -102,7 +158,26 @@ const confirmReturn = async (req, res) => {
             });
         }
 
-        const nextVehicleStatus = ['available', 'maintenance'].includes(vehicle_status_after_return)
+        // Tính phí trả muộn: giá/giờ × số giờ trễ (làm tròn lên)
+        const now = new Date();
+        const endAt = new Date(booking.end_at);
+        let isLate = false;
+        let lateHours = 0;
+        let lateFee = 0;
+
+        if (now > endAt) {
+            isLate = true;
+            const diffMs = now - endAt;
+            lateHours = Math.ceil(diffMs / (1000 * 60 * 60));
+            const pricePerHour = Number(
+                booking.vehicles?.pricing_plans?.price_per_hour ??
+                booking.vehicles?.price_per_hour ??
+                0
+            );
+            lateFee = pricePerHour * lateHours;
+        }
+
+        const requestedStatus = ['available', 'maintenance'].includes(vehicle_status_after_return)
             ? vehicle_status_after_return
             : 'available';
 
@@ -111,9 +186,30 @@ const confirmReturn = async (req, res) => {
                 where: { id: bookingId },
                 data: {
                     booking_status: 'completed',
+                    return_battery: return_battery !== undefined ? Number(return_battery) : null,
+                    return_odo: return_odo !== undefined ? Number(return_odo) : null,
+                    has_damage: Boolean(has_damage),
+                    damage_note: damage_note ?? null,
+                    actual_return_at: now,
+                    is_late: isLate,
+                    late_hours: lateHours,
+                    late_fee: lateFee,
                     note: note ?? booking.note
                 }
             });
+
+            const anotherActive = await tx.bookings.findFirst({
+                where: {
+                    vehicle_id: booking.vehicle_id,
+                    id: { not: bookingId },
+                    booking_status: { in: ACTIVE_BOOKING_STATUSES }
+                }
+            });
+
+            let nextVehicleStatus = requestedStatus;
+            if (requestedStatus === 'available' && anotherActive) {
+                nextVehicleStatus = 'reserved';
+            }
 
             await tx.vehicles.update({
                 where: { id: booking.vehicle_id },

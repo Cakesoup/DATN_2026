@@ -108,8 +108,59 @@ const login = async (req, res) => {
         });
     }
 };
+const forgotPassword = async (req, res) => {
+    try {
+        const { email, phone, new_password } = req.body;
+
+        if (!email || !phone || !new_password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng nhập email, số điện thoại và mật khẩu mới'
+            });
+        }
+
+        if (new_password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+            });
+        }
+
+        const user = await prisma.users.findUnique({
+            where: { email }
+        });
+
+        // Xác minh: email tồn tại VÀ số điện thoại khớp đúng chủ tài khoản
+        if (!user || user.phone !== phone) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email và số điện thoại không khớp với tài khoản nào'
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        await prisma.users.update({
+            where: { id: user.id },
+            data: { password_hash: hashedPassword }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Đặt lại mật khẩu thành công, vui lòng đăng nhập'
+        });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi server',
+            error: error.message
+        });
+    }
+};
 
 module.exports = {
     register,
-    login
+    login,
+    forgotPassword
 };

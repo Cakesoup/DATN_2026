@@ -1,5 +1,6 @@
 const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
+const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
 
 const createPricingPlan = async (req, res) => {
     try {
@@ -39,7 +40,9 @@ const createPricingPlan = async (req, res) => {
                 price_per_hour: Number(price_per_hour || 0),
                 price_per_day: Number(price_per_day || 0),
                 deposit_rate: Number(deposit_rate ?? 0.3),
-                is_active: typeof is_active === 'boolean' ? is_active : true
+                is_active: typeof is_active === 'boolean' ? is_active : true,
+                duration_days: duration_days != null ? Number(duration_days) : null,
+                package_price: package_price != null ? Number(package_price) : null,
             }
         });
 
@@ -60,14 +63,37 @@ const createPricingPlan = async (req, res) => {
 
 const getAllPricingPlansForAdmin = async (req, res) => {
     try {
-        const plans = await prisma.pricing_plans.findMany({
-            orderBy: { created_at: 'desc' }
-        });
+        const { page, limit, skip } = getPaginationParams(req.query);
+        const { is_active, keyword } = req.query;
+
+        const where = {};
+
+        if (is_active !== undefined) {
+            where.is_active = is_active === 'true';
+        }
+
+        if (keyword) {
+            where.OR = [
+                { plan_code: { contains: keyword, mode: 'insensitive' } },
+                { name: { contains: keyword, mode: 'insensitive' } }
+            ];
+        }
+
+        const [total, plans] = await Promise.all([
+            prisma.pricing_plans.count({ where }),
+            prisma.pricing_plans.findMany({
+                where,
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit
+            })
+        ]);
 
         return res.status(200).json({
             success: true,
             message: 'Lấy danh sách bảng giá thành công',
-            data: serializeBigInt(plans)
+            data: serializeBigInt(plans),
+            pagination: buildPagination(page, limit, total)
         });
     } catch (error) {
         console.error('Get pricing plans for admin error:', error);
@@ -140,7 +166,9 @@ const updatePricingPlan = async (req, res) => {
                 ...(price_per_hour !== undefined ? { price_per_hour: Number(price_per_hour) } : {}),
                 ...(price_per_day !== undefined ? { price_per_day: Number(price_per_day) } : {}),
                 ...(deposit_rate !== undefined ? { deposit_rate: Number(deposit_rate) } : {}),
-                ...(typeof is_active === 'boolean' ? { is_active } : {})
+                ...(typeof is_active === 'boolean' ? { is_active } : {}),
+                ...(duration_days !== undefined ? { duration_days: duration_days != null ? Number(duration_days) : null } : {}),
+                ...(package_price !== undefined ? { package_price: package_price != null ? Number(package_price) : null } : {}),
             }
         });
 

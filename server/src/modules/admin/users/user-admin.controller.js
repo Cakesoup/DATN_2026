@@ -1,29 +1,58 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
+const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
 
 const ALLOWED_ROLES = ['admin', 'staff', 'customer'];
 
 const getAllUsers = async (req, res) => {
     try {
-        const users = await prisma.users.findMany({
-            orderBy: { created_at: 'desc' },
-            select: {
-                id: true,
-                full_name: true,
-                email: true,
-                phone: true,
-                role: true,
-                is_active: true,
-                created_at: true,
-                updated_at: true
-            }
-        });
+        const { page, limit, skip } = getPaginationParams(req.query);
+        const { role, is_active, keyword } = req.query;
+
+        const where = {};
+
+        if (role) {
+            where.role = role;
+        }
+
+        if (is_active !== undefined) {
+            where.is_active = is_active === 'true';
+        }
+
+        if (keyword) {
+            where.OR = [
+                { full_name: { contains: keyword, mode: 'insensitive' } },
+                { email: { contains: keyword, mode: 'insensitive' } },
+                { phone: { contains: keyword, mode: 'insensitive' } }
+            ];
+        }
+
+        const [total, users] = await Promise.all([
+            prisma.users.count({ where }),
+            prisma.users.findMany({
+                where,
+                orderBy: { created_at: 'desc' },
+                select: {
+                    id: true,
+                    full_name: true,
+                    email: true,
+                    phone: true,
+                    role: true,
+                    is_active: true,
+                    created_at: true,
+                    updated_at: true
+                },
+                skip,
+                take: limit
+            })
+        ]);
 
         return res.status(200).json({
             success: true,
             message: 'Lấy danh sách người dùng thành công',
-            data: serializeBigInt(users)
+            data: serializeBigInt(users),
+            pagination: buildPagination(page, limit, total)
         });
     } catch (error) {
         console.error('Get all users error:', error);
