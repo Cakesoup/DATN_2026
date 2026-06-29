@@ -15,7 +15,6 @@ import { useAuthStore } from '@/features/auth/auth.store.js';
 
 const adminMenus = [
     { to: '/admin/vehicles', label: 'Quản lý xe', icon: CarFront },
-    { to: '/admin/bookings', label: 'Đơn đặt xe', icon: CalendarDays },
     { to: '/admin/pricing', label: 'Bảng giá', icon: BadgeDollarSign },
     { to: '/admin/users', label: 'Người dùng', icon: Users },
     { to: '/admin/reports', label: 'Báo cáo', icon: BarChart3 },
@@ -24,7 +23,8 @@ const adminMenus = [
 
 const staffMenus = [
     { to: '/staff/vehicles', label: 'Quản lý xe', icon: CarFront },
-    { to: '/staff/bookings', label: 'Bàn giao & trả xe', icon: CalendarDays },
+    { to: '/staff/handover', label: 'Bàn giao xe', icon: CalendarDays },
+    { to: '/staff/returns', label: 'Nhận trả xe', icon: Receipt },
     { to: '/staff/profile', label: 'Hồ sơ', icon: UserCircle2 },
     { to: '/staff/support', label: 'Phản hồi thắc mắc', icon: MessageSquare },
 ];

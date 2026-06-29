@@ -22,11 +22,11 @@ function Navbar() {
         <header className="sticky top-0 z-40 border-b border-emerald-900/10 bg-white/85 backdrop-blur">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
                 <Link to="/" className="flex items-center gap-2.5">
-                    <div className="rounded-xl bg-emerald-500 p-2 text-white"><Zap size={20} className="fill-white" /></div>
-                    <div>
-                        <div className="text-lg font-extrabold tracking-tight text-slate-900">EV Rental</div>
-                        <div className="-mt-1 text-[11px] font-medium text-emerald-600">by Smart Brain JSC</div>
-                    </div>
+                    <img
+                        src="../../../public/logo/logo-removebg-preview.png"
+                        alt="Logo"
+                        className="h-10 w-auto object-contain"
+                    />
                 </Link>
 
                 <nav className="hidden items-center gap-8 md:flex">
@@ -308,10 +308,11 @@ function Footer() {
         <footer className="border-t border-slate-200 bg-white py-12">
             <div className="mx-auto grid max-w-7xl gap-8 px-6 md:grid-cols-4">
                 <div>
-                    <div className="flex items-center gap-2.5">
-                        <div className="rounded-xl bg-emerald-500 p-2 text-white"><Zap size={18} className="fill-white" /></div>
-                        <div className="text-lg font-extrabold text-slate-900">EV Rental</div>
-                    </div>
+                    <img
+                        src="../../../public/logo/logo-removebg-preview.png"
+                        alt="Logo"
+                        className="h-10 w-auto object-contain"
+                    />
                     <p className="mt-3 text-sm text-slate-500">Công ty Cổ phần Smart Brain — Giải pháp thuê xe điện thông minh.</p>
                 </div>
                 <div>

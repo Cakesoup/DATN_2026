@@ -1,6 +1,7 @@
 const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
 const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
+const ACTIVE_BOOKING_STATUSES = ['pending', 'confirmed', 'handover_pending', 'in_progress'];
 
 const mapVehicleWithRating = (vehicle) => {
     const reviewCount = vehicle.reviews.length;
@@ -29,7 +30,7 @@ const mapVehicleWithRating = (vehicle) => {
 const getAllVehicles = async (req, res) => {
     try {
         const { page, limit, skip } = getPaginationParams(req.query);
-        const { brand, status, min_price_per_day, max_price_per_day, min_rating, sort_by } = req.query;
+        const { brand, min_price_per_day, max_price_per_day, min_rating, sort_by } = req.query;
 
         const where = {
             deleted_at: null
@@ -42,16 +43,6 @@ const getAllVehicles = async (req, res) => {
             };
         }
 
-        if (status) {
-            where.status = status;
-        } else {
-            where.status = {
-                in: ['available', 'reserved']
-            };
-        }
-
-        // Lấy TẤT CẢ xe khớp điều kiện cơ bản (chưa phân trang),
-        // để filter giá/rating và sort trên toàn tập rồi mới phân trang ở tầng app.
         const allVehicles = await prisma.vehicles.findMany({
             where,
             include: {
@@ -64,8 +55,22 @@ const getAllVehicles = async (req, res) => {
                 }
             }
         });
+        const vehicleIds = allVehicles.map((v) => v.id);
+        const activeBookings = vehicleIds.length
+            ? await prisma.bookings.findMany({
+                where: {
+                    vehicle_id: { in: vehicleIds },
+                    booking_status: { in: ACTIVE_BOOKING_STATUSES },
+                },
+                select: { vehicle_id: true },
+            })
+            : [];
+        const rentedSet = new Set(activeBookings.map((b) => String(b.vehicle_id)));
 
-        let mapped = allVehicles.map(mapVehicleWithRating);
+        let mapped = allVehicles.map((v) => ({
+            ...mapVehicleWithRating(v),
+            is_rented: rentedSet.has(String(v.id)),
+        }));
 
         if (min_price_per_day !== undefined) {
             mapped = mapped.filter(
@@ -153,13 +158,19 @@ const getVehicleById = async (req, res) => {
                 message: 'Không tìm thấy xe'
             });
         }
-
+        const activeBooking = await prisma.bookings.findFirst({
+            where: {
+                vehicle_id: vehicleId,
+                booking_status: { in: ACTIVE_BOOKING_STATUSES },
+            },
+            select: { id: true },
+        });
+        const isRented = !!activeBooking;
         const similarRaw = await prisma.vehicles.findMany({
             where: {
                 deleted_at: null,
                 brand: vehicle.brand,
                 id: { not: vehicleId },
-                status: { in: ['available', 'reserved'] },
             },
             include: { pricing_plans: true, reviews: { select: { rating: true } } },
             take: 4,
@@ -171,6 +182,7 @@ const getVehicleById = async (req, res) => {
             message: 'Lấy chi tiết xe thành công',
             data: serializeBigInt({
                 ...mapVehicleWithRating(vehicle),
+                is_rented: isRented,
                 similar,
             })
         });

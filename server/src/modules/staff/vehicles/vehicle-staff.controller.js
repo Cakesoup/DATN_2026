@@ -2,32 +2,18 @@ const prisma = require('../../../config/prisma');
 const { serializeBigInt } = require('../../../utils/serialize');
 const { getPaginationParams, buildPagination } = require('../../../utils/pagination');
 
-const ALLOWED_STATUSES = [
-    'available',
-    'reserved',
-    'handover_pending',
-    'in_use',
-    'maintenance'
-];
 
 const getAllVehiclesForStaff = async (req, res) => {
     try {
         const { page, limit, skip } = getPaginationParams(req.query);
-        const { status, brand, keyword } = req.query;
+        const { brand, keyword } = req.query;
 
         const where = {
             deleted_at: null
         };
 
-        if (status) {
-            where.status = status;
-        }
-
         if (brand) {
-            where.brand = {
-                contains: brand,
-                mode: 'insensitive'
-            };
+            where.brand = { contains: brand, mode: 'insensitive' };
         }
 
         if (keyword) {
@@ -117,33 +103,13 @@ const getVehicleByIdForStaff = async (req, res) => {
 const createVehicleForStaff = async (req, res) => {
     try {
         const {
-            vehicle_code,
-            name,
-            brand,
-            model,
-            battery_level,
-            range_km,
-            price_per_hour,
-            price_per_day,
-            pricing_plan_id,
-            status,
-            current_location,
-            description,
-            image_url
+            vehicle_code, name, brand, model, battery_level, range_km,
+            price_per_hour, price_per_day, pricing_plan_id,
+            current_location, description, image_url
         } = req.body;
 
         if (!vehicle_code || !name || !brand) {
-            return res.status(400).json({
-                success: false,
-                message: 'Thiếu dữ liệu bắt buộc'
-            });
-        }
-
-        if (status && !ALLOWED_STATUSES.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Trạng thái xe không hợp lệ'
-            });
+            return res.status(400).json({ success: false, message: 'Thiếu dữ liệu bắt buộc' });
         }
 
         const existingVehicleCode = await prisma.vehicles.findFirst({
@@ -171,7 +137,6 @@ const createVehicleForStaff = async (req, res) => {
                 price_per_hour: price_per_hour ?? 0,
                 price_per_day: price_per_day ?? 0,
                 pricing_plan_id: pricing_plan_id ? BigInt(pricing_plan_id) : null,
-                status: status || 'available',
                 current_location: current_location || null,
                 description: description || null,
                 image_url: image_url || null
@@ -208,18 +173,11 @@ const updateVehicleForStaff = async (req, res) => {
             price_per_hour,
             price_per_day,
             pricing_plan_id,
-            status,
             current_location,
             description,
             image_url
         } = req.body;
 
-        const existingVehicle = await prisma.vehicles.findFirst({
-            where: {
-                id,
-                deleted_at: null
-            }
-        });
 
         if (!existingVehicle) {
             return res.status(404).json({
@@ -244,12 +202,6 @@ const updateVehicleForStaff = async (req, res) => {
             }
         }
 
-        if (status && !ALLOWED_STATUSES.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Trạng thái xe không hợp lệ'
-            });
-        }
 
         const updatedVehicle = await prisma.vehicles.update({
             where: { id },
@@ -266,7 +218,6 @@ const updateVehicleForStaff = async (req, res) => {
                     pricing_plan_id !== undefined
                         ? (pricing_plan_id ? BigInt(pricing_plan_id) : null)
                         : existingVehicle.pricing_plan_id,
-                status: status ?? existingVehicle.status,
                 current_location: current_location ?? existingVehicle.current_location,
                 description: description ?? existingVehicle.description,
                 image_url: image_url ?? existingVehicle.image_url
@@ -290,53 +241,6 @@ const updateVehicleForStaff = async (req, res) => {
     }
 };
 
-const updateVehicleStatus = async (req, res) => {
-    try {
-        const id = BigInt(req.params.id);
-        const { status } = req.body;
-
-        if (!ALLOWED_STATUSES.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Trạng thái xe không hợp lệ'
-            });
-        }
-
-        const vehicle = await prisma.vehicles.findFirst({
-            where: {
-                id,
-                deleted_at: null
-            }
-        });
-
-        if (!vehicle) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy xe'
-            });
-        }
-
-        const updatedVehicle = await prisma.vehicles.update({
-            where: { id },
-            data: { status },
-            include: {
-                pricing_plans: true
-            }
-        });
-
-        return res.status(200).json({
-            success: true,
-            message: 'Cập nhật trạng thái xe thành công',
-            data: serializeBigInt(updatedVehicle)
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Lỗi server',
-            error: error.message
-        });
-    }
-};
 
 const deleteVehicleForStaff = async (req, res) => {
     try {
@@ -381,6 +285,5 @@ module.exports = {
     getVehicleByIdForStaff,
     createVehicleForStaff,
     updateVehicleForStaff,
-    updateVehicleStatus,
     deleteVehicleForStaff
 };

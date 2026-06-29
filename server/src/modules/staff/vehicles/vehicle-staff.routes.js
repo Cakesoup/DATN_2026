@@ -9,7 +9,6 @@ const {
     getVehicleByIdForStaff,
     createVehicleForStaff,
     updateVehicleForStaff,
-    updateVehicleStatus,
     deleteVehicleForStaff
 } = require('./vehicle-staff.controller');
 
@@ -17,7 +16,6 @@ router.get('/', authMiddleware, authorizeRoles('staff', 'admin', 'manager'), get
 router.get('/:id', authMiddleware, authorizeRoles('staff', 'admin', 'manager'), getVehicleByIdForStaff);
 router.post('/', authMiddleware, authorizeRoles('staff', 'admin', 'manager'), createVehicleForStaff);
 router.put('/:id', authMiddleware, authorizeRoles('staff', 'admin', 'manager'), updateVehicleForStaff);
-router.patch('/:id/status', authMiddleware, authorizeRoles('staff', 'admin', 'manager'), updateVehicleStatus);
 router.delete('/:id', authMiddleware, authorizeRoles('staff', 'admin', 'manager'), deleteVehicleForStaff);
 
 module.exports = router;

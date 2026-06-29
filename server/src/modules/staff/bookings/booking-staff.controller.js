@@ -111,11 +111,6 @@ const confirmHandover = async (req, res) => {
                 }
             });
 
-            await tx.vehicles.update({
-                where: { id: booking.vehicle_id },
-                data: { status: 'in_use' }
-            });
-
             return nextBooking;
         });
 
@@ -177,10 +172,6 @@ const confirmReturn = async (req, res) => {
             lateFee = pricePerHour * lateHours;
         }
 
-        const requestedStatus = ['available', 'maintenance'].includes(vehicle_status_after_return)
-            ? vehicle_status_after_return
-            : 'available';
-
         const updatedBooking = await prisma.$transaction(async (tx) => {
             const nextBooking = await tx.bookings.update({
                 where: { id: bookingId },
@@ -198,24 +189,6 @@ const confirmReturn = async (req, res) => {
                 }
             });
 
-            const anotherActive = await tx.bookings.findFirst({
-                where: {
-                    vehicle_id: booking.vehicle_id,
-                    id: { not: bookingId },
-                    booking_status: { in: ACTIVE_BOOKING_STATUSES }
-                }
-            });
-
-            let nextVehicleStatus = requestedStatus;
-            if (requestedStatus === 'available' && anotherActive) {
-                nextVehicleStatus = 'reserved';
-            }
-
-            await tx.vehicles.update({
-                where: { id: booking.vehicle_id },
-                data: { status: nextVehicleStatus }
-            });
-
             return nextBooking;
         });
 
@@ -229,9 +202,92 @@ const confirmReturn = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
     }
 };
+// Lấy đơn cho staff theo stage: 'handover' (pending+confirmed+handover_pending) | 'return' (in_progress+completed)
+const getStaffBookings = async (req, res) => {
+    try {
+        const { page, limit, skip } = getPaginationParams(req.query);
+        const { booking_status, keyword, stage } = req.query;
 
+        let statusFilter;
+        if (booking_status) {
+            statusFilter = booking_status;
+        } else if (stage === 'return') {
+            statusFilter = { in: ['in_progress', 'completed'] };
+        } else {
+            // mặc định / stage === 'handover'
+            statusFilter = { in: ['pending', 'confirmed', 'handover_pending'] };
+        }
+
+        const where = { booking_status: statusFilter };
+
+        if (keyword) {
+            where.OR = [
+                { booking_code: { contains: keyword, mode: 'insensitive' } },
+                { users: { full_name: { contains: keyword, mode: 'insensitive' } } },
+                { vehicles: { name: { contains: keyword, mode: 'insensitive' } } },
+                { vehicles: { vehicle_code: { contains: keyword, mode: 'insensitive' } } }
+            ];
+        }
+
+        const [total, bookings] = await Promise.all([
+            prisma.bookings.count({ where }),
+            prisma.bookings.findMany({
+                where,
+                include: {
+                    users: { select: { id: true, full_name: true, email: true, phone: true } },
+                    vehicles: { include: { pricing_plans: true } }
+                },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit
+            })
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Lấy danh sách booking thành công',
+            data: serializeBigInt(bookings),
+            pagination: buildPagination(page, limit, total)
+        });
+    } catch (error) {
+        console.error('Get staff bookings error:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+    }
+};
+
+const confirmBooking = async (req, res) => {
+    try {
+        const bookingId = BigInt(req.params.id);
+
+        const booking = await prisma.bookings.findUnique({ where: { id: bookingId } });
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy booking' });
+        }
+
+        if (booking.booking_status !== 'pending') {
+            return res.status(400).json({ success: false, message: 'Chỉ xác nhận được đơn đang chờ xác nhận' });
+        }
+
+        const updated = await prisma.bookings.update({
+            where: { id: bookingId },
+            data: { booking_status: 'confirmed' }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Xác nhận đơn thành công',
+            data: serializeBigInt(updated)
+        });
+    } catch (error) {
+        console.error('Confirm booking error:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+    }
+};
 module.exports = {
+    getStaffBookings,
     getPendingHandoverBookings,
+    confirmBooking,
     confirmHandover,
     confirmReturn
 };

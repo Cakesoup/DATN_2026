@@ -10,9 +10,6 @@ const getOverviewReport = async (req, res) => {
             totalVehicles,
             totalBookings,
             totalInvoices,
-            availableVehicles,
-            inUseVehicles,
-            maintenanceVehicles,
             pendingBookings,
             inProgressBookings,
             completedBookings,
@@ -24,9 +21,6 @@ const getOverviewReport = async (req, res) => {
             prisma.vehicles.count(),
             prisma.bookings.count(),
             prisma.invoices.count(),
-            prisma.vehicles.count({ where: { status: 'available' } }),
-            prisma.vehicles.count({ where: { status: 'in_use' } }),
-            prisma.vehicles.count({ where: { status: 'maintenance' } }),
             prisma.bookings.count({ where: { booking_status: 'pending' } }),
             prisma.bookings.count({ where: { booking_status: 'in_progress' } }),
             prisma.bookings.count({ where: { booking_status: 'completed' } }),
@@ -82,11 +76,6 @@ const getOverviewReport = async (req, res) => {
                     total_vehicles: totalVehicles,
                     total_bookings: totalBookings,
                     total_invoices: totalInvoices
-                },
-                vehicles: {
-                    available: availableVehicles,
-                    in_use: inUseVehicles,
-                    maintenance: maintenanceVehicles
                 },
                 bookings: {
                     pending: pendingBookings,

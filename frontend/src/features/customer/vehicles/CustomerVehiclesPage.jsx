@@ -93,45 +93,58 @@ export default function CustomerVehiclesPage() {
             ) : (
                 <>
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                        {vehicles.map((v) => (
-                            <div key={v.id} className="group overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:shadow-lg hover:ring-emerald-200">
-                                <div className="relative cursor-pointer" onClick={() => goDetail(v.id)}>
-                                    {v.image_url ? (
-                                        <img src={v.image_url} alt={v.name} className="h-48 w-full object-cover transition group-hover:scale-105" />
-                                    ) : (
-                                        <div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-300"><CarFront className="h-14 w-14" /></div>
-                                    )}
-                                    {v.average_rating != null ? (
-                                        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-amber-600 shadow-sm backdrop-blur">
-                                            <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> {v.average_rating}
-                                        </span>
-                                    ) : null}
-                                </div>
-                                <div className="space-y-3 p-5">
-                                    <div className="cursor-pointer" onClick={() => goDetail(v.id)}>
-                                        <h3 className="font-bold text-slate-900 hover:text-emerald-600">{v.name}</h3>
-                                        <p className="text-xs text-slate-500">{v.brand} {v.model ? `· ${v.model}` : ''}</p>
+                        {vehicles.map((v) => {
+                            const available = !v.is_rented;
+                            const statusBadge = available
+                                ? { text: 'Còn xe', cls: 'bg-emerald-100 text-emerald-700' }
+                                : { text: 'Hết xe', cls: 'bg-rose-100 text-rose-700' };
+                            return (
+                                <div key={v.id} className="group overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:shadow-lg hover:ring-emerald-200">
+                                    <div className="relative cursor-pointer" onClick={() => goDetail(v.id)}>
+                                        {v.image_url ? (
+                                            <img src={v.image_url} alt={v.name} className="h-48 w-full object-cover transition group-hover:scale-105" />
+                                        ) : (
+                                            <div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-300"><CarFront className="h-14 w-14" /></div>
+                                        )}
+                                        {/* Badge trạng thái xe */}
+                                        <span className={`absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold shadow-sm ${statusBadge.cls}`}>
+                    {statusBadge.text}
+                </span>
+                                        {v.average_rating != null ? (
+                                            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-amber-600 shadow-sm backdrop-blur">
+                        <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> {v.average_rating}
+                    </span>
+                                        ) : null}
                                     </div>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><BatteryCharging className="h-3.5 w-3.5" /> {v.battery_level ?? 0}%</span>
-                                        {v.range_km ? <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{v.range_km} km</span> : null}
-                                        {v.current_location ? <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"><MapPin className="h-3.5 w-3.5" /> {v.current_location}</span> : null}
-                                    </div>
-
-                                    <div className="flex items-end justify-between border-t border-slate-100 pt-3">
-                                        <div>
-                                            <div className="text-xl font-extrabold text-emerald-600">{formatMoney(v.effective_price_per_day)}đ</div>
-                                            <div className="text-xs text-slate-400">mỗi ngày</div>
+                                    <div className="space-y-3 p-5">
+                                        <div className="cursor-pointer" onClick={() => goDetail(v.id)}>
+                                            <h3 className="font-bold text-slate-900 hover:text-emerald-600">{v.name}</h3>
+                                            <p className="text-xs text-slate-500">{v.brand} {v.model ? `· ${v.model}` : ''}</p>
                                         </div>
-                                        <button onClick={() => goDetail(v.id)}
-                                                className="rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600">
-                                            Đặt xe
-                                        </button>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><BatteryCharging className="h-3.5 w-3.5" /> {v.battery_level ?? 0}%</span>
+                                            {v.range_km ? <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{v.range_km} km</span> : null}
+                                            {v.current_location ? <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"><MapPin className="h-3.5 w-3.5" /> {v.current_location}</span> : null}
+                                        </div>
+
+                                        <div className="flex items-end justify-between border-t border-slate-100 pt-3">
+                                            <div>
+                                                <div className="text-xl font-extrabold text-emerald-600">{formatMoney(v.effective_price_per_day)}đ</div>
+                                                <div className="text-xs text-slate-400">mỗi ngày</div>
+                                            </div>
+                                            <button
+                                                onClick={() => { setSelectedVehicle(v); setOpenBooking(true); }}
+                                                disabled={!available}
+                                                className="rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                            >
+                                                {available ? 'Đặt xe' : 'Hết xe'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <div className="flex items-center justify-center gap-2">

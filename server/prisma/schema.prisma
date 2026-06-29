@@ -70,7 +70,6 @@ model vehicles {
   price_per_hour   Decimal        @default(0) @db.Decimal(12, 2)
   price_per_day    Decimal        @default(0) @db.Decimal(12, 2)
   pricing_plan_id  BigInt?
-  status           String         @default("available") @db.VarChar(30)
   current_location String?        @db.VarChar(255)
   description      String?
    seats          Int?

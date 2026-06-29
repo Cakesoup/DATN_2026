@@ -5,13 +5,6 @@ import toast from 'react-hot-toast';
 import { createStaffVehicle, updateStaffVehicle } from '../vehicle.staff.api.js';
 import ImageUploader from '@/components/common/ImageUploader.jsx';
 
-const STATUS_OPTIONS = [
-    { label: 'Sẵn sàng', value: 'available' },
-    { label: 'Đã đặt', value: 'reserved' },
-    { label: 'Chờ bàn giao', value: 'handover_pending' },
-    { label: 'Đang sử dụng', value: 'in_use' },
-    { label: 'Bảo trì', value: 'maintenance' },
-];
 
 const EMPTY_FORM = {
     vehicle_code: '',
@@ -22,7 +15,6 @@ const EMPTY_FORM = {
     range_km: '',
     price_per_hour: '',
     price_per_day: '',
-    status: 'available',
     current_location: '',
     description: '',
     image_url: '',
@@ -47,7 +39,6 @@ export default function VehicleFormModal({ open, vehicle, onClose }) {
                 range_km: vehicle.range_km ?? '',
                 price_per_hour: vehicle.price_per_hour ?? '',
                 price_per_day: vehicle.price_per_day ?? '',
-                status: vehicle.status || 'available',
                 current_location: vehicle.current_location || '',
                 description: vehicle.description || '',
                 image_url: vehicle.image_url || '',
@@ -121,9 +112,6 @@ export default function VehicleFormModal({ open, vehicle, onClose }) {
                         <input type="number" value={form.price_per_hour} onChange={(e) => setField('price_per_hour', e.target.value)} placeholder="Giá/giờ" className="h-11 rounded-xl border border-slate-200 px-4" />
                         <input type="number" value={form.price_per_day} onChange={(e) => setField('price_per_day', e.target.value)} placeholder="Giá/ngày" className="h-11 rounded-xl border border-slate-200 px-4" />
                         <input value={form.current_location} onChange={(e) => setField('current_location', e.target.value)} placeholder="Vị trí hiện tại" className="h-11 rounded-xl border border-slate-200 px-4" />
-                        <select value={form.status} onChange={(e) => setField('status', e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-4">
-                            {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                        </select>
                     </div>
 
                     <div>

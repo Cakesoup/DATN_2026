@@ -49,7 +49,7 @@ export default function VehicleDetailPage() {
         );
     }
 
-    const available = ['available', 'reserved'].includes(String(vehicle.status).toLowerCase());
+    const available = !vehicle.is_rented;
 
     return (
         <div className="space-y-6">
@@ -75,6 +75,11 @@ export default function VehicleDetailPage() {
                         <div className="flex items-start justify-between gap-3">
                             <div>
                                 <h1 className="text-2xl font-extrabold text-slate-900">{vehicle.name}</h1>
+                                <span className={`mt-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${
+                                    available ? 'bg-emerald-100 text-emerald-700' : String(vehicle.status).toLowerCase() === 'maintenance' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                                }`}>
+    {available ? 'Còn xe' : String(vehicle.status).toLowerCase() === 'maintenance' ? 'Bảo trì' : 'Hết xe'}
+</span>
                                 <p className="text-sm text-slate-500">{vehicle.brand} {vehicle.model ? `· ${vehicle.model}` : ''}</p>
                             </div>
                             {vehicle.average_rating != null ? (

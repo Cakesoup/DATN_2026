@@ -1,44 +1,18 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Search, RefreshCcw, CircleAlert, CarFront, Settings2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Search, RefreshCcw, CircleAlert, CarFront, Plus, Pencil, Trash2 } from 'lucide-react';
 import { getStaffVehicles } from './vehicle.staff.api.js';
-import UpdateVehicleStatusModal from './components/UpdateVehicleStatusModal.jsx';
 import VehicleFormModal from './components/VehicleFormModal.jsx';
 import DeleteVehicleModal from './components/DeleteVehicleModal.jsx';
 
-const STATUS_OPTIONS = [
-    { label: 'Tất cả', value: 'all' },
-    { label: 'Sẵn sàng', value: 'available' },
-    { label: 'Đã đặt', value: 'reserved' },
-    { label: 'Chờ bàn giao', value: 'handover_pending' },
-    { label: 'Đang sử dụng', value: 'in_use' },
-    { label: 'Bảo trì', value: 'maintenance' },
-];
-
 const PAGE_SIZE = 10;
 
-function getStatusBadge(status) {
-    const v = String(status || '').toLowerCase();
-    if (v === 'available') return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200';
-    if (v === 'reserved') return 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
-    if (v === 'handover_pending') return 'bg-violet-50 text-violet-700 ring-1 ring-violet-200';
-    if (v === 'in_use') return 'bg-blue-50 text-blue-700 ring-1 ring-blue-200';
-    if (v === 'maintenance') return 'bg-rose-50 text-rose-700 ring-1 ring-rose-200';
-    return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
-}
-
-function getStatusLabel(status) {
-    return STATUS_OPTIONS.find((o) => o.value === String(status || '').toLowerCase())?.label || status || 'Không rõ';
-}
 
 export default function StaffVehiclesPage() {
     const [searchInput, setSearchInput] = useState('');
     const [keyword, setKeyword] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
 
-    const [selectedVehicle, setSelectedVehicle] = useState(null);
-    const [openModal, setOpenModal] = useState(false);
     const [formVehicle, setFormVehicle] = useState(null);
     const [openForm, setOpenForm] = useState(false);
     const [deleteVehicle, setDeleteVehicle] = useState(null);
@@ -46,7 +20,6 @@ export default function StaffVehiclesPage() {
     const queryParams = {
         page: currentPage,
         limit: PAGE_SIZE,
-        status: statusFilter === 'all' ? undefined : statusFilter,
         keyword: keyword || undefined,
     };
 
@@ -100,10 +73,6 @@ export default function StaffVehiclesPage() {
                                placeholder="Tìm theo mã, tên, model..."
                                className="h-11 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-slate-300" />
                     </div>
-                    <select value={statusFilter} onChange={(e) => { setCurrentPage(1); setStatusFilter(e.target.value); }}
-                            className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-slate-300">
-                        {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
                     <button type="submit" className="h-11 rounded-2xl bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800">Tìm kiếm</button>
                 </form>
 
@@ -124,7 +93,6 @@ export default function StaffVehiclesPage() {
                                     <th className="px-4 py-3">Tên xe</th>
                                     <th className="px-4 py-3">Hãng</th>
                                     <th className="px-4 py-3">Pin</th>
-                                    <th className="px-4 py-3">Trạng thái</th>
                                     <th className="px-4 py-3 text-right">Hành động</th>
                                 </tr>
                                 </thead>
@@ -146,17 +114,10 @@ export default function StaffVehiclesPage() {
                                         <td className="px-4 py-4">{v.brand}</td>
                                         <td className="px-4 py-4">{v.battery_level ?? 0}%</td>
                                         <td className="px-4 py-4">
-                                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadge(v.status)}`}>{getStatusLabel(v.status)}</span>
-                                        </td>
-                                        <td className="px-4 py-4">
                                             <div className="flex justify-end gap-2">
                                                 <button onClick={() => { setFormVehicle(v); setOpenForm(true); }}
                                                         className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50" title="Sửa">
                                                     <Pencil className="h-4 w-4" />
-                                                </button>
-                                                <button onClick={() => { setSelectedVehicle(v); setOpenModal(true); }}
-                                                        className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50" title="Đổi trạng thái">
-                                                    <Settings2 className="h-4 w-4" />
                                                 </button>
                                                 <button onClick={() => setDeleteVehicle(v)}
                                                         className="rounded-xl border border-rose-200 p-2 text-rose-600 transition hover:bg-rose-50" title="Xóa">
@@ -166,7 +127,7 @@ export default function StaffVehiclesPage() {
                                         </td>
                                     </tr>
                                 )) : (
-                                    <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">Không tìm thấy xe phù hợp.</td></tr>
+                                    <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">Không tìm thấy xe phù hợp.</td></tr>
                                 )}
                                 </tbody>
                             </table>
@@ -186,7 +147,6 @@ export default function StaffVehiclesPage() {
                 )}
             </div>
 
-            <UpdateVehicleStatusModal open={openModal} vehicle={selectedVehicle} onClose={() => { setOpenModal(false); setSelectedVehicle(null); }} />
             <VehicleFormModal open={openForm} vehicle={formVehicle} onClose={() => { setOpenForm(false); setFormVehicle(null); }} />
             <DeleteVehicleModal open={Boolean(deleteVehicle)} vehicle={deleteVehicle} onClose={() => setDeleteVehicle(null)} />
         </div>

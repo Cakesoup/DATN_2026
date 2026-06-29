@@ -96,16 +96,7 @@ export default function AdminReportsPage() {
                         <StatCard icon={Receipt} label="Hóa đơn" value={overview.summary.total_invoices} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                            <h3 className="mb-3 text-sm font-semibold text-slate-600">Tình trạng xe</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span className="text-slate-500">Sẵn sàng</span><span className="font-semibold text-emerald-600">{overview.vehicles.available}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Đang sử dụng</span><span className="font-semibold text-sky-600">{overview.vehicles.in_use}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Bảo trì</span><span className="font-semibold text-amber-600">{overview.vehicles.maintenance}</span></div>
-                            </div>
-                        </div>
-
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                             <h3 className="mb-3 text-sm font-semibold text-slate-600">Tình trạng booking</h3>
                             <div className="space-y-2 text-sm">

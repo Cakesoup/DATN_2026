@@ -1,7 +1,17 @@
 import axiosClient from '@/lib/axios.js';
 
+export async function getStaffBookings(params = {}) {
+    const response = await axiosClient.get('/staff/bookings', { params });
+    return response.data;
+}
+
 export async function getPendingHandoverBookings(params = {}) {
     const response = await axiosClient.get('/staff/bookings/pending-handover', { params });
+    return response.data;
+}
+
+export async function confirmBooking(id) {
+    const response = await axiosClient.patch(`/staff/bookings/${id}/confirm`);
     return response.data;
 }
 

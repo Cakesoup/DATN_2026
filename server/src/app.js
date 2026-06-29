@@ -24,6 +24,8 @@ const adminUserRoutes = require('./modules/admin/users/user-admin.routes');
 const adminReportRoutes = require('./modules/admin/reports/report-admin.routes');
 const adminProfileRoutes = require('./modules/admin/profile/profile-admin.routes');
 
+const publicVehicleRoutes = require('./modules/public/vehicle.public.routes');
+
 const app = express();
 
 app.use(cors());
@@ -52,6 +54,8 @@ app.use('/api/admin/pricing', adminPricingRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/reports', adminReportRoutes);
 app.use('/api/admin/profile', adminProfileRoutes);
+
+app.use('/api/public/vehicles', publicVehicleRoutes);
 
 app.use((req, res) => {
     return res.status(404).json({

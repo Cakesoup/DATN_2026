@@ -80,18 +80,18 @@ async function main() {
     // image_url để trống: dán URL Cloudinary sau khi upload tay
     console.log('Tạo vehicles...');
     const vehicleSeed = [
-        { vehicle_code: 'EV001', name: 'VinFast Feliz S', brand: 'VinFast', model: 'Feliz S', battery_level: 100, range_km: 120, price_per_hour: 15000, price_per_day: 120000, planIdx: 1, status: 'available', current_location: 'Cau Giay, Ha Noi' },
-        { vehicle_code: 'EV002', name: 'VinFast Evo 200', brand: 'VinFast', model: 'Evo 200', battery_level: 85, range_km: 203, price_per_hour: 18000, price_per_day: 150000, planIdx: 2, status: 'available', current_location: 'Dong Da, Ha Noi' },
-        { vehicle_code: 'EV003', name: 'Yadea Odora S1', brand: 'Yadea', model: 'Odora S1', battery_level: 76, range_km: 100, price_per_hour: 14000, price_per_day: 110000, planIdx: 0, status: 'available', current_location: 'Hai Ba Trung, Ha Noi' },
-        { vehicle_code: 'EV004', name: 'Dat Bike Weaver 200', brand: 'Dat Bike', model: 'Weaver 200', battery_level: 92, range_km: 200, price_per_hour: 28000, price_per_day: 250000, planIdx: 4, status: 'available', current_location: 'Ba Dinh, Ha Noi' },
-        { vehicle_code: 'EV005', name: 'Pega AuraS+', brand: 'Pega', model: 'AuraS+', battery_level: 60, range_km: 120, price_per_hour: 16000, price_per_day: 130000, planIdx: 2, status: 'maintenance', current_location: 'Thanh Xuan, Ha Noi' },
-        { vehicle_code: 'EV006', name: 'VinFast Klara S2', brand: 'VinFast', model: 'Klara S2', battery_level: 88, range_km: 194, price_per_hour: 22000, price_per_day: 190000, planIdx: 3, status: 'available', current_location: 'Tay Ho, Ha Noi' },
-        { vehicle_code: 'EV007', name: 'Yadea G5', brand: 'Yadea', model: 'G5', battery_level: 95, range_km: 130, price_per_hour: 17000, price_per_day: 140000, planIdx: 1, status: 'available', current_location: 'Hoan Kiem, Ha Noi' },
-        { vehicle_code: 'EV008', name: 'Selex Camel', brand: 'Selex', model: 'Camel', battery_level: 70, range_km: 150, price_per_hour: 25000, price_per_day: 210000, planIdx: 4, status: 'available', current_location: 'Long Bien, Ha Noi' },
-        { vehicle_code: 'EV009', name: 'VinFast Vento S', brand: 'VinFast', model: 'Vento S', battery_level: 90, range_km: 110, price_per_hour: 20000, price_per_day: 175000, planIdx: 3, status: 'available', current_location: 'Nam Tu Liem, Ha Noi' },
-        { vehicle_code: 'EV010', name: 'Yadea Ossy', brand: 'Yadea', model: 'Ossy', battery_level: 82, range_km: 90, price_per_hour: 13000, price_per_day: 105000, planIdx: 0, status: 'available', current_location: 'Ha Dong, Ha Noi' },
-        { vehicle_code: 'EV011', name: 'Pega eSH', brand: 'Pega', model: 'eSH', battery_level: 78, range_km: 140, price_per_hour: 19000, price_per_day: 165000, planIdx: 2, status: 'available', current_location: 'Cau Giay, Ha Noi' },
-        { vehicle_code: 'EV012', name: 'Dat Bike Quantum', brand: 'Dat Bike', model: 'Quantum', battery_level: 100, range_km: 285, price_per_hour: 32000, price_per_day: 300000, planIdx: 9, status: 'available', current_location: 'Ba Dinh, Ha Noi' },
+        { vehicle_code: 'EV001', name: 'VinFast Feliz S', brand: 'VinFast', model: 'Feliz S', battery_level: 100, range_km: 120, price_per_hour: 15000, price_per_day: 120000, planIdx: 1, current_location: 'Cau Giay, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212555/xp4xoxxuhsacoivyzsom.jpg' },
+        { vehicle_code: 'EV002', name: 'VinFast Evo 200', brand: 'VinFast', model: 'Evo 200', battery_level: 85, range_km: 203, price_per_hour: 18000, price_per_day: 150000, planIdx: 2, current_location: 'Dong Da, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212547/p2ttssqetaxpznribyc3.jpg' },
+        { vehicle_code: 'EV003', name: 'Yadea Odora S1', brand: 'Yadea', model: 'Odora S1', battery_level: 76, range_km: 100, price_per_hour: 14000, price_per_day: 110000, planIdx: 0, current_location: 'Hai Ba Trung, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212538/w8elb7smy79dyphcazh7.jpg' },
+        { vehicle_code: 'EV004', name: 'Dat Bike Weaver 200', brand: 'Dat Bike', model: 'Weaver 200', battery_level: 92, range_km: 200, price_per_hour: 28000, price_per_day: 250000, planIdx: 4, current_location: 'Ba Dinh, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212530/usyy6bkiqctsxlrn47ep.jpg' },
+        { vehicle_code: 'EV005', name: 'Pega AuraS+', brand: 'Pega', model: 'AuraS+', battery_level: 60, range_km: 120, price_per_hour: 16000, price_per_day: 130000, planIdx: 2, current_location: 'Thanh Xuan, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212521/iydynuj4g6f4xwejqtrc.jpg' },
+        { vehicle_code: 'EV006', name: 'VinFast Klara S2', brand: 'VinFast', model: 'Klara S2', battery_level: 88, range_km: 194, price_per_hour: 22000, price_per_day: 190000, planIdx: 3, current_location: 'Tay Ho, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212512/jjcqgvthze5sik4zzzxq.jpg' },
+        { vehicle_code: 'EV007', name: 'Yadea G5', brand: 'Yadea', model: 'G5', battery_level: 95, range_km: 130, price_per_hour: 17000, price_per_day: 140000, planIdx: 1, current_location: 'Hoan Kiem, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212505/krqcgcgfvm1lx2gjadqp.jpg' },
+        { vehicle_code: 'EV008', name: 'Selex Camel', brand: 'Selex', model: 'Camel', battery_level: 70, range_km: 150, price_per_hour: 25000, price_per_day: 210000, planIdx: 4, current_location: 'Long Bien, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212496/zu4mnukd9gngyjzr7kuv.jpg' },
+        { vehicle_code: 'EV009', name: 'VinFast Vento S', brand: 'VinFast', model: 'Vento S', battery_level: 90, range_km: 110, price_per_hour: 20000, price_per_day: 175000, planIdx: 3, current_location: 'Nam Tu Liem, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212488/guktgihxjfukhhexxtbp.jpg' },
+        { vehicle_code: 'EV010', name: 'Yadea Ossy', brand: 'Yadea', model: 'Ossy', battery_level: 82, range_km: 90, price_per_hour: 13000, price_per_day: 105000, planIdx: 0, current_location: 'Ha Dong, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782212478/dp3ow3q1cdxubgbpd8qn.jpg' },
+        { vehicle_code: 'EV011', name: 'Pega eSH', brand: 'Pega', model: 'eSH', battery_level: 78, range_km: 140, price_per_hour: 19000, price_per_day: 165000, planIdx: 2, current_location: 'Cau Giay, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782203852/images_eo7bac.jpg' },
+        { vehicle_code: 'EV012', name: 'Dat Bike Quantum', brand: 'Dat Bike', model: 'Quantum', battery_level: 100, range_km: 285, price_per_hour: 32000, price_per_day: 300000, planIdx: 9, current_location: 'Ba Dinh, Ha Noi', image_url: 'https://res.cloudinary.com/dvkuahjnj/image/upload/v1782203836/images_ujwqep.jpg' },
     ];
 
     const vehicles = [];
@@ -101,7 +101,7 @@ async function main() {
             data: {
                 ...rest,
                 pricing_plan_id: plans[planIdx].id,
-                image_url: '', // TODO: dán URL Cloudinary sau khi upload ảnh
+                image_url: v.image_url || '',
                 description: `${v.name} - xe điện ${v.brand} tiết kiệm và thân thiện môi trường`,
             },
         });
@@ -379,7 +379,7 @@ async function main() {
     console.log('\n   Mat khau mac dinh moi tai khoan: 123456');
     console.log('   admin@evrental.com / manager@evrental.com / staff@evrental.com');
     console.log('   customer1..8@evrental.com');
-    console.log('\n   ⚠ Nho dan URL anh Cloudinary vao field image_url cua tung xe (dang de trong).');
+    console.log('\n   ✓ Anh xe da gan san tu Cloudinary.');
 }
 
 main()

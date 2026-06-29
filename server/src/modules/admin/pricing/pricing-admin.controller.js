@@ -11,7 +11,9 @@ const createPricingPlan = async (req, res) => {
             price_per_hour,
             price_per_day,
             deposit_rate,
-            is_active
+            is_active,
+            duration_days,
+            package_price
         } = req.body;
 
         if (!plan_code || !name) {
@@ -144,7 +146,9 @@ const updatePricingPlan = async (req, res) => {
             price_per_hour,
             price_per_day,
             deposit_rate,
-            is_active
+            is_active,
+            duration_days,
+            package_price
         } = req.body;
 
         const plan = await prisma.pricing_plans.findUnique({

@@ -50,10 +50,6 @@ const createBooking = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy xe' });
         }
 
-        if (!['available', 'reserved'].includes(vehicle.status)) {
-            return res.status(400).json({ success: false, message: 'Xe hiện không sẵn sàng để đặt' });
-        }
-
         const conflictBooking = await prisma.bookings.findFirst({
             where: {
                 vehicle_id: BigInt(vehicle_id),
@@ -89,7 +85,6 @@ const createBooking = async (req, res) => {
             totalAmount = Number(appliedPlan.package_price);
             depositAmount = totalAmount * DEPOSIT_RATE;
         } else {
-            // Không gói: tính theo ngày của xe
             const diffMs = endDate - startDate;
             const totalDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
             const safeDays = totalDays <= 0 ? 1 : totalDays;
@@ -156,7 +151,8 @@ const getMyBookings = async (req, res) => {
 
         const mapped = bookings.map((booking) => ({
             ...booking,
-            can_review: ['completed', 'invoiced'].includes(booking.booking_status) && booking.reviews === null
+            can_review: ['completed', 'invoiced'].includes(booking.booking_status)
+                && (!booking.reviews || booking.reviews.length === 0)
         }));
 
         return res.status(200).json({
@@ -198,7 +194,8 @@ const getBookingById = async (req, res) => {
             message: 'Lấy chi tiết đơn thuê thành công',
             data: serializeBigInt({
                 ...booking,
-                can_review: ['completed', 'invoiced'].includes(booking.booking_status) && booking.reviews === null
+                can_review: ['completed', 'invoiced'].includes(booking.booking_status)
+                    && (!booking.reviews || booking.reviews.length === 0)
             })
         });
     } catch (error) {
@@ -228,26 +225,9 @@ const cancelBooking = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Không thể hủy đơn ở trạng thái hiện tại' });
         }
 
-        const updatedBooking = await prisma.$transaction(async (tx) => {
-            const nextBooking = await tx.bookings.update({
-                where: { id: bookingId },
-                data: { booking_status: 'cancelled' }
-            });
-
-            const otherActiveBooking = await tx.bookings.findFirst({
-                where: {
-                    vehicle_id: booking.vehicle_id,
-                    id: { not: bookingId },
-                    booking_status: { in: ACTIVE_BOOKING_STATUSES }
-                }
-            });
-
-            await tx.vehicles.update({
-                where: { id: booking.vehicle_id },
-                data: { status: otherActiveBooking ? 'reserved' : 'available' }
-            });
-
-            return nextBooking;
+        const updatedBooking = await prisma.bookings.update({
+            where: { id: bookingId },
+            data: { booking_status: 'cancelled' }
         });
 
         return res.status(200).json({
